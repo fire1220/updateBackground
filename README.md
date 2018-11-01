@@ -8,7 +8,7 @@
 + 使用到的非系统自带脚本命令有 curl 
 + debian和Ubuntu系列可以用 sudo apt install curl 或 sudo apt-get install curl 命令安装
 + redhat系列可以用 sudo yum install curl安装
-+ 错误解决方法
++ 个别出现错误解决方法
 + GLib-GIO-Message: Using the 'memory' GSettings backend.  Your settings will not be saved or shared with other applications.
 + wgb@wgb:~$ 
 + 上面的解决办法，只是暂时的，长期的解决办法为：
