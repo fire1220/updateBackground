@@ -1,6 +1,5 @@
 # updateBackground
 + @author 周健东
-+ 
 + @date 2018-09-26 09:59:59
 ## 使用场景
 + Ubuntu和其他Linux系统更换壁纸脚本,
