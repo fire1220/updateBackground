@@ -1,6 +1,7 @@
 #!/bin/bash
 # @author 周健东
 # @date 2018-09-26 09:59:59
+# @update 2019-01-02 10:17:51
 # Ubuntu和其他Linux系统更换壁纸脚本,
 # gnome和unity桌面系统测试过
 # 目前支持bing.com和wallpaperup.com两个网站的资源
@@ -95,6 +96,9 @@ pushd ${backgroundsPath}
 # 下载以后返回图片名称
 bingWeb(){
     imageName='bing'$(date +'%Y%m%d')'_1920_1080.jpg'
+    if [ -f "${imageName}" ];then
+        exit 2 # 文件已经存在
+    fi
     curl 'http://api.yingjoy.cn/pic/?t=bing&w=1920' > ${imageName}
     echo ${imageName}
     return 0
@@ -126,15 +130,21 @@ wallpaperupWeb(){
 }
 
 
-imageName=$(${sourceFunction}) # 返回文件名称
-imagePath=${backgroundsPath}${imageName}
+imageName=$(${sourceFunction}) # 返回本地文件名称
+if [ $? == 2 ];then
+    echo '文件已经存在,不需要下载了'
+    exit 9
+fi
+imagePath=${backgroundsPath}${imageName} # 返回本地文件全路径名称
 
 standardLogOut
 
-
-if [ ! -f "${imagePath}" ];then
-    echo 'rename error'
-    exit 6
+gsettingsBackground=`gsettings get org.gnome.desktop.background picture-uri`;
+if [ -f "${imagePath}" ];then
+    if [ "${gsettingsBackground}" == "'file:${imagePath}'" ];then
+        echo 'file exists,path:'${imagePath}
+        exit 6
+    fi
 fi
 
 gsettings set org.gnome.desktop.background picture-uri "file:${imagePath}"
