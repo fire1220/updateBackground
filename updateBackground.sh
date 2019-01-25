@@ -95,11 +95,23 @@ pushd ${backgroundsPath}
 # bing壁纸,每天更换的,尺寸是1920*1080
 # 下载以后返回图片名称
 bingWeb(){
-    imageName='bing'$(date +'%Y%m%d')'_1920_1080.jpg'
+    imageName='bing'$(date +'%Y%m%d')'_1920_1080.jpeg'
     if [ -f "${imageName}" ];then
+        echo ${imageName}
         exit 2 # 文件已经存在
     fi
-    curl 'http://api.yingjoy.cn/pic/?t=bing&w=1920' > ${imageName}
+    webImgUrl='http://api.yingjoy.cn/pic/?t=bing&w=1920'
+    wget -U NoSuchBrowser/1.0 -c ${webImgUrl} -O ${imageName} 
+    if [ $? -ne 0 ];then
+        echo 'wget error'
+        exit 3
+    fi
+    data=$(ls -l ${imageName}|awk '{print $5}')
+    if [ $data -lt 740 ];then
+        echo 'file download error'
+        mv ${imageName} ${imageName}.$(date +'%s').error
+        exit 4
+    fi
     echo ${imageName}
     return 0
 }
@@ -129,22 +141,24 @@ wallpaperupWeb(){
     return 0
 }
 
+gsettingsBackground=`gsettings get org.gnome.desktop.background picture-uri`;
 
 imageName=$(${sourceFunction}) # 返回本地文件名称
-if [ $? == 2 ];then
-    echo '文件已经存在,不需要下载了'
-    exit 9
+if [ $? -ne 0 ];then
+    echo ${imageName}
+    exit 8
 fi
+
 imagePath=${backgroundsPath}${imageName} # 返回本地文件全路径名称
 
-standardLogOut
-
-gsettingsBackground=`gsettings get org.gnome.desktop.background picture-uri`;
 if [ -f "${imagePath}" ];then
     if [ "${gsettingsBackground}" == "'file:${imagePath}'" ];then
         echo 'file exists,path:'${imagePath}
         exit 6
     fi
+else
+    echo 'file is not exists!'
+    exit 7
 fi
 
 gsettings set org.gnome.desktop.background picture-uri "file:${imagePath}"
