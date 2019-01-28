@@ -98,19 +98,13 @@ bingWeb(){
     imageName='bing'$(date +'%Y%m%d')'_1920_1080.jpeg'
     if [ -f "${imageName}" ];then
         echo ${imageName}
-        exit 2 # 文件已经存在
+        exit 0 # 文件已经存在
     fi
     webImgUrl='http://api.yingjoy.cn/pic/?t=bing&w=1920'
     wget -U NoSuchBrowser/1.0 -c ${webImgUrl} -O ${imageName} 
     if [ $? -ne 0 ];then
         echo 'wget error'
         exit 3
-    fi
-    data=$(ls -l ${imageName}|awk '{print $5}')
-    if [ $data -lt 740 ];then
-        echo 'file download error'
-        mv ${imageName} ${imageName}.$(date +'%s').error
-        exit 4
     fi
     echo ${imageName}
     return 0
@@ -141,15 +135,28 @@ wallpaperupWeb(){
     return 0
 }
 
+# 获取系统背景图片地址
 gsettingsBackground=`gsettings get org.gnome.desktop.background picture-uri`;
 
-imageName=$(${sourceFunction}) # 返回本地文件名称
+# 返回本地文件名称
+imageName=$(${sourceFunction}) 
 if [ $? -ne 0 ];then
     echo ${imageName}
     exit 8
 fi
 
-imagePath=${backgroundsPath}${imageName} # 返回本地文件全路径名称
+# 如果文件太小则说明下载的文件有问题,重新命名并退出
+imageSizeData=$(ls -l ${imageName}|awk '{print $5}')
+if [ $imageSizeData -lt 740 ];then
+    echo 'file size lt 740'
+    imageNewName=${imageName}.$(date +'%s').error
+    mv ${imageName} ${imageNewName}
+    echo ${imageNewName};
+    exit 4
+fi
+
+# 返回本地文件全路径名称
+imagePath=${backgroundsPath}${imageName} 
 
 if [ -f "${imagePath}" ];then
     if [ "${gsettingsBackground}" == "'file:${imagePath}'" ];then
@@ -161,6 +168,7 @@ else
     exit 7
 fi
 
+# 设置背景图片
 gsettings set org.gnome.desktop.background picture-uri "file:${imagePath}"
 if [ $? -ne 0 ];then
     echo 'gsettings error'
