@@ -1,6 +1,7 @@
 # updateBackground
 + @author 周健东
 + @date 2018-09-26 09:59:59
++ @date 2020-11-20 15:30:00
 ## 使用场景
 + Ubuntu和其他Linux系统更换壁纸脚本,
 + gnome和unity桌面系统测试过
