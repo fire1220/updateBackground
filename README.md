@@ -32,4 +32,4 @@
 		updateBackground -wr 0
 		updateBackground -b 0
 	image save path:
-		/Users/fire/.local/share/backgrounds
+		~/.local/share/backgrounds
