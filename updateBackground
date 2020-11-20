@@ -1,7 +1,7 @@
 #!/bin/bash
 # @author 周健东
 # @date 2018-09-26 09:59:59
-# @update 2019-01-02 10:17:51
+# @update 2020-02-13 17:50:33
 # Ubuntu和其他Linux系统更换壁纸脚本,
 # gnome和unity桌面系统测试过
 # 目前支持bing.com和wallpaperup.com两个网站的资源
@@ -20,7 +20,8 @@
 arguments=$1 # 参数表示选择的来源
 
 # 休眠时间(秒)
-sleepSecond=60
+# sleepSecond=60
+sleepSecond=0
 if [ -n "$2" ];then
     sleepSecond=$(echo $2|awk -v sleepSecond=${sleepSecond} '{print $0~/^[0-9]*$/?$0:sleepSecond}')
 fi
@@ -30,6 +31,9 @@ helpDoc(){
     echo -e "options:"
     echo -e "\t-h, --help\t\t\thelp"
     echo -e "\t-b, --bing\t\t\tsource : bing.com"
+    echo -e "\t\t\t\t\t每日最新壁纸,尺寸是1920*1080"
+    echo -e "\t-y, --yingjoy\t\t\tsource : bing图片"
+    echo -e "\t\t\t\t\tsourcePath : http://api.yingjoy.cn/pic/?t=bing&w=1920"
     echo -e "\t\t\t\t\t每日最新壁纸,尺寸是1920*1080"
     echo -e "\t-wr, --wallpaperupRandom\tsource : wallpaperup.com"
     echo -e "\t\t\t\t\trandom"
@@ -55,6 +59,9 @@ random(){
 case $arguments in
     '-h'|'--help')
         helpDoc
+    ;;
+    '-y'|'--yingjoy')
+        sourceFunction='bingYingjoyApi'
     ;;
     '-b'|'--bing')
         sourceFunction='bingWeb'
@@ -82,7 +89,6 @@ standardLogOut(){
 }
 
 sleep ${sleepSecond}
-
 # 存放图片路径
 backgroundsPath="${HOME}/.local/share/backgrounds/"
 if [ ! -d ${backgroundsPath} ];then
@@ -90,7 +96,24 @@ if [ ! -d ${backgroundsPath} ];then
 fi
 
 pushd ${backgroundsPath}
-
+# bing壁纸,每天更换的,尺寸是1920*1080
+# 下载以后返回图片名称
+bingYingjoyApi(){
+    imageName='bing'$(date +'%Y%m%d')'_1920_1080.jpeg'
+    if [ -f "${imageName}" ];then
+        echo ${imageName}
+        exit 0 # 文件已经存在
+    fi
+    webImgUrl='http://api.yingjoy.cn/pic/?t=bing&w=1920'
+    wget -U NoSuchBrowser/1.0 -c ${webImgUrl} -O ${imageName} 
+    if [ $? -ne 0 ];then
+        # echo 'wget error'
+        echo ${imageName}
+        exit 3
+    fi
+    echo ${imageName}
+    return 0
+}
 
 # bing壁纸,每天更换的,尺寸是1920*1080
 # 下载以后返回图片名称
@@ -100,10 +123,15 @@ bingWeb(){
         echo ${imageName}
         exit 0 # 文件已经存在
     fi
-    webImgUrl='http://api.yingjoy.cn/pic/?t=bing&w=1920'
-    wget -U NoSuchBrowser/1.0 -c ${webImgUrl} -O ${imageName} 
+    bingWebPath='https://cn.bing.com/'
+    webImgUrlPath=$(curl "https://cn.bing.com/"|grep "<head>" |awk -F'href="' '{print $2}'|awk -F'"' '{print $1}')
     if [ $? -ne 0 ];then
-        echo 'wget error'
+        exit 4
+    fi
+    webImgUrlHTTP=${bingWebPath}${webImgUrlPath}
+    wget -U NoSuchBrowser/1.0 -c ${webImgUrlHTTP} -O ${imageName} 
+    if [ $? -ne 0 ];then
+        echo ${imageName}
         exit 3
     fi
     echo ${imageName}
@@ -122,26 +150,28 @@ wallpaperupWeb(){
     # wallpaperup图片地址路径
     # webImgUrl=$(echo ${webUrl}|xargs curl|grep -oe '<img[^>]*>'|awk -v numberRow=${numberRow} '{if(NR==numberRow){print $0}}'|grep -o -e 'https://www\.wallpaperup\.com[^\.]*\.jpg'|head -n1|sed 's/-187/-1400/')
     webImgUrl=$(echo ${webUrl}|xargs curl|grep -oe '<img[^>]*>'|awk -v numberRow=${numberRow} '{if(NR==numberRow){print $0}}'|grep -o -e 'https://www\.wallpaperup\.com[^\.]*\.jpg'|head -n1|sed 's/-187//')
-
     webImageName=${webImgUrl##*/}
-
     wget -U NoSuchBrowser/1.0 ${webImgUrl}
     if [ $? -ne 0 ];then
         echo 'wget error'
         exit 2
     fi
-
     echo "${webImageName}"
     return 0
 }
 
 # 获取系统背景图片地址
 gsettingsBackground=`gsettings get org.gnome.desktop.background picture-uri`;
-
 # 返回本地文件名称
 imageName=$(${sourceFunction}) 
 if [ $? -ne 0 ];then
-    echo ${imageName}
+    if [ -f "${imageName}" ];then
+        rm ${imageName}
+        echo "删除无用缓存图片:".${imageName}
+        # echo ${imageName}
+    else
+        echo ${imageName}
+    fi
     exit 8
 fi
 
@@ -157,7 +187,6 @@ fi
 
 # 返回本地文件全路径名称
 imagePath=${backgroundsPath}${imageName} 
-
 if [ -f "${imagePath}" ];then
     if [ "${gsettingsBackground}" == "'file:${imagePath}'" ];then
         echo 'file exists,path:'${imagePath}
@@ -173,7 +202,7 @@ gsettings set org.gnome.desktop.background picture-uri "file:${imagePath}"
 if [ $? -ne 0 ];then
     echo 'gsettings error'
     exit 4
-
 fi
 
 exit 0
+
