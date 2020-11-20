@@ -12,7 +12,7 @@
 + 个别出现错误解决方法
 + wgb@wgb:~$ sudo gedit ~/.bashrc
 + 然后把粘贴在最后一行export GIO_EXTRA_MODULES=/usr/lib/x86_64-linux-gnu/gio/modules/
-+ 随机背景接口:wallpaperup.com
++ 随机背景接口:https://www.wallpaperup.com/
 + bing背景:有两个源，一个是来自bing.com；另一个来自http://api.yingjoy.cn/pic/?t=bing&w=1920
 ## 使用方法
 
